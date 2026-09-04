@@ -4666,6 +4666,35 @@ local terrain = workspace:FindFirstChildWhichIsA("Terrain",true)
 local plr = plrs.LocalPlayer
 local mouse = plr:GetMouse()
 
+local pickupCash = function(cashInstance: BasePart)
+	local evsFolder = rp:FindFirstChild("Events")
+	if evsFolder then
+		local pickupCashEvent = evsFolder:FindFirstChild("CZDPZUS")
+		if pickupCashEvent then
+			pickupCashEvent:FireServer(cashInstance)
+		end
+	end
+end
+local pickupTool = function(WeaponHandle: BasePart)
+	local evsFolder = rp:FindFirstChild("Events")
+	if evsFolder then
+		local pickupCashEvent = evsFolder:FindFirstChild("PIC_TLO")
+		if pickupCashEvent then
+			pickupCashEvent:FireServer(WeaponHandle)
+		end
+	end
+end
+
+local pickupScrapCrate = function(crateId: string)
+	local evsFolder = rp:FindFirstChild("Events")
+	if evsFolder then
+		local pickupCashEvent = evsFolder:FindFirstChild("PIC_PU")
+		if pickupCashEvent then
+			pickupCashEvent:FireServer(crateId)
+		end
+	end
+end
+
 local window = library:new({textsize = 13.5,font = Enum.Font.RobotoMono,name = "romanware",color = Color3.fromRGB(102,50,200)})
 local combat = window:page({name = "combat"})
 local movement = window:page({name = "movement"})
@@ -5590,7 +5619,7 @@ visuals1:toggle({name = "clear character",def = config.clearcharacter,callback =
 end})
 
 -- // misc
-local misc1 = misc:section({name = "misc section 1",side = "left",size = 600})
+local misc1 = misc:section({name = "misc section 1",side = "left",size = 610})
 local misc2 = misc:section({name = "teleports",side = "right",size = 800})
 local teleport = function(pos)
 	local char = plr.Character
@@ -5800,6 +5829,93 @@ misc1:toggle({name = "no teddy & clippers buy delay",def = config.noteddyclipper
 end})
 misc1:toggle({name = "no slayer sword pull delay",def = config.noslayerpulldelay,callback = function(value)
 	config.noslayerpulldelay = value
+end})
+local autocashcon = nil::RBXScriptConnection
+misc1:toggle({name = "auto pickup cash",def = false,callback = function(value)
+	if value then
+		autocashcon = rs.PreRender:Connect(function()
+			if spawnedbread then
+				for i, bread in pairs(spawnedbread:GetChildren()) do
+					local char = plr.Character
+					if char ~= nil then
+						local root: BasePart = char:FindFirstChild("HumanoidRootPart")
+						if root then
+							local distance = (bread.Position - root.Position).Magnitude
+							if distance < 10 then
+								pickupCash(bread)
+							end
+						end
+					end
+				end
+			end
+		end)
+	else 
+		if autocashcon ~= nil and typeof(autocashcon) == "RBXScriptConnection" then
+			autocashcon:Disconnect()
+			autocashcon = nil
+		end
+	end
+end})
+local autotoolscon = nil::RBXScriptConnection
+misc1:toggle({name = "auto pickup tools",def = false,callback = function(value)
+	if value then
+		autotoolscon = rs.PreRender:Connect(function()
+			if spawnedtools then
+				for i, toolmodel in pairs(spawnedtools:GetChildren()) do
+					local char = plr.Character
+					if char ~= nil then
+						local root: BasePart = char:FindFirstChild("HumanoidRootPart")
+						if root then
+							local weaponHandle = toolmodel:FindFirstChild("WeaponHandle") or toolmodel:FindFirstChild("Handle") or toolmodel:FindFirstChildWhichIsA("BasePart")
+							if weaponHandle then
+								local distance = (weaponHandle.Position - root.Position).Magnitude
+								if distance < 10 then
+									pickupTool(weaponHandle)
+								end
+							end
+						end
+					end
+				end
+			end
+		end)
+	else 
+		if autotoolscon ~= nil and typeof(autotoolscon) == "RBXScriptConnection" then
+			autotoolscon:Disconnect()
+			autotoolscon = nil
+		end
+	end
+end})
+local autocratescon = nil::RBXScriptConnection
+misc1:toggle({name = "auto pickup crates",def = false,callback = function(value)
+	if value then
+		autocratescon = rs.PreRender:Connect(function()
+			if spawnedpiles then
+				for i, crate in pairs(spawnedpiles:GetChildren()) do
+					local char = plr.Character
+					if char ~= nil then
+						local root: BasePart = char:FindFirstChild("HumanoidRootPart")
+						if root then
+							local id = crate:GetAttribute("id") or crate:GetAttribute("Id") or crate:GetAttribute("ld") or crate:GetAttribute("ID") or crate:GetAttribute("Ld") or crate:GetAttribute("LD")
+							if id and id ~= nil then
+								local mainPart = crate:FindFirstChildWhichIsA("BasePart")
+								if mainPart then
+									local distance = (mainPart.Position - root.Position).Magnitude
+									if distance < 10 then
+										pickupScrapCrate(id)
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end)
+	else 
+		if autocratescon ~= nil and typeof(autocratescon) == "RBXScriptConnection" then
+			autocratescon:Disconnect()
+			autocratescon = nil
+		end
+	end
 end})
 local instacashconnection = nil::RBXScriptConnection
 misc1:toggle({name = "insta pickup cash",def = config.instacash,callback = function(value)
