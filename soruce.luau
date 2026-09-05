@@ -378,14 +378,12 @@ function library:new(props)
 	local toggled = true
 	local cooldown = false
 	local saved = UDim2.new(0,0,0,0)
-	_G.romanwareOpen = true
 	--
 	uis.InputBegan:Connect(function(Input)
 		if Input.UserInputType == Enum.UserInputType.Keyboard then
 			if Input.KeyCode == window.key then
 				if cooldown == false then
 					if toggled then
-						_G.romanwareOpen = false
 						cooldown = true
 						toggled = not toggled
 						saved = outline.Position
@@ -417,7 +415,6 @@ function library:new(props)
 						wait(0.5)
 						cooldown = false
 					else
-						_G.romanwareOpen = true
 						cooldown = true
 						toggled = not toggled
 						if window.x == false and window.y == false then
@@ -1794,6 +1791,7 @@ end
 --
 function sections:slider(props)
 	-- // properties
+	local textcolor = props.textcolor
 	local name = props.name or props.Name or props.page or props.Page or props.pagename or props.Pagename or props.PageName or props.pageName or "new ui"
 	local def = props.def or props.Def or props.default or props.Default or 0
 	local max = props.max or props.Max or props.maximum or props.Maximum or 100
@@ -1916,7 +1914,7 @@ function sections:slider(props)
 			Position = UDim2.new(0,0,0,0),
 			Font = self.library.font,
 			Text = name,
-			TextColor3 = Color3.fromRGB(255,255,255),
+			TextColor3 = textcolor or Color3.fromRGB(255,255,255),
 			TextSize = self.library.textsize,
 			TextStrokeTransparency = 0,
 			TextXAlignment = "Left",
@@ -5122,6 +5120,7 @@ end
 
 -- // variables
 local rainconfig = {
+	calcorigin = "character",
 	rainenabled = false,
 	thunderenabled = false,
 	brightness = 0.35,
@@ -6075,18 +6074,27 @@ visuals1:toggle({name = "clear character",def = config.clearcharacter,callback =
 	end
 end})
 
-local visuals4 = visuals:section({name = "weather",side = "left",size = 125})
-visuals4:toggle({name = "rain",def = rainconfig.rainenabled,callback = function(value)
+local visuals4 = visuals:section({name = "rain atmosphere",side = "left",size = 245})
+visuals4:toggle({name = "enabled",def = rainconfig.rainenabled,callback = function(value)
 	rainconfig.rainenabled = value
 end})
-visuals4:slider({name = "rain rate",def = rainconfig.rainRate, max = 100,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
+visuals4:slider({name = "droplet rate [performance-heavy]", textcolor = Color3.new(1, .8, .8), def = rainconfig.rainRate, max = 300,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
 	rainconfig.rainRate = value
 end})
-visuals4:slider({name = "rain range",def = rainconfig.rainRange, max = 200,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
+visuals4:slider({name = "droplet range", def = rainconfig.rainRange, max = 500,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
 	rainconfig.rainRange = value
+end})
+visuals4:dropdown({name = "calc origin",def = rainconfig.calcorigin,max = 2,options = {"camera", "character"},callback = function(chosen)
+	rainconfig.calcorigin = chosen
 end})
 visuals4:toggle({name = "thunder",def = rainconfig.thunderenabled,callback = function(value)
 	rainconfig.thunderenabled = value
+end})
+visuals4:slider({name = "brightness", def = rainconfig.brightness, max = 1,min = 0,rounding = false,ticking = false,measuring = "",callback = function(value)
+	rainconfig.brightness = value
+end})
+visuals4:slider({name = "atmosphere density", def = rainconfig.atmosphereDensity, max = 1,min = 0,rounding = false,ticking = false,measuring = "",callback = function(value)
+	rainconfig.atmosphereDensity = value
 end})
 
 -- // misc
@@ -6712,6 +6720,26 @@ local createRainDroplet = function()
 		rainconfig.rainOriginHeight,
 		cam.CFrame.Z + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange)
 	)
+	if rainconfig.calcorigin == "character" then
+		local char = plr.Character
+		if char ~= nil then
+			local part = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart or char:FindFirstChildWhichIsA("BasePart")
+			if not part then
+				local pos = char:GetPivot().Position
+				origin = Vector3.new(
+					pos.X + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange),
+					rainconfig.rainOriginHeight,
+					pos.Z + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange)
+				)
+			else 
+				origin = Vector3.new(
+					part.Position.X + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange),
+					rainconfig.rainOriginHeight,
+					part.Position.Z + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange)
+				)
+			end
+		end
+	end
 	local destination = origin - Vector3.new(0, 1, 0)
 	local direction = (destination - origin).Unit*9999
 	local params = RaycastParams.new()
@@ -6882,6 +6910,18 @@ local setup = function()
 	end
 	equalizer.Enabled = true
 	local origin = cam.CFrame.Position
+	if rainconfig.calcorigin == "character" then
+		local char = plr.Character
+		if char ~= nil then
+			local part = char:FindFirstChild("HumanoidRootPart") or char.PrimaryPart or char:FindFirstChildWhichIsA("BasePart")
+			if not part then
+				local pos = char:GetPivot().Position
+				origin = pos
+			else 
+				origin = part.Position
+			end
+		end
+	end
 	local destination = origin + Vector3.new(0, 1, 0)
 	local direction = (destination - origin).Unit*9999
 	local params = RaycastParams.new()
@@ -7172,9 +7212,6 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 				end
 			end
 		end
-	end
-	if _G.romanwareOpen then
-		uis.MouseIconEnabled = true
 	end
 	if config.fov > 0 then
 		ts:Create(
