@@ -5155,6 +5155,7 @@ local rainconfig = {
 	equalizerTween = TweenInfo.new(.3, Enum.EasingStyle.Linear)
 }
 local config = {
+	synctime = false,
 	-- // combat
 	projectilecontrol = false,
 	autoweapons = false,
@@ -5816,6 +5817,11 @@ fly1:toggle({name = "noclip",def = config.flynoclip,callback = function(value)
 end})
 
 -- // visuals
+local visuals5 = visuals:section({name = "extras",side = "right",size = 45})
+visuals5:toggle({name = "sync game time to irl time",def = config.synctime,callback = function(value)
+	config.synctime = value
+end})
+
 local visuals3 = visuals:section({name = "viewmodel",side = "right",size = 545})
 visuals3:toggle({name = "override position",def = config.overrideposition,callback = function(value)
 	config.overrideposition = value
@@ -5927,7 +5933,9 @@ visuals1:toggle({name = "fullbright",def = config.lootesp,callback = function(va
 			lighting.EnvironmentDiffuseScale = 0
 			lighting.GlobalShadows = false
 			lighting.Brightness = 1
-			lighting.ClockTime = 12
+			if not config.synctime then
+				lighting.ClockTime = 12
+			end
 			lighting.GeographicLatitude = 23.5
 			lighting.ExposureCompensation = 0
 			lighting.ColorShift_Top = Color3.new(0,0,0)
@@ -6990,6 +6998,9 @@ task.spawn(function()
 end)
 
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	if config.synctime then
+		lightingserv.TimeOfDay = os.date("!%X", os.time()):sub(1, 8)
+	end
 	local char = plr.Character
 	if char ~= nil and cfg.enabled then
 		local DisplayItems = char:FindFirstChild("DisplayItems")
