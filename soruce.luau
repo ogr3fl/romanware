@@ -5131,6 +5131,13 @@ buy1:button({name = "buy in nearest dealer",callback = function()
 	buyItem()
 end})
 
+local refillcfg = {
+	enabled = false,
+}
+local refill1 = buy:section({name = "refill",side = "left",size = 45})
+refill1:toggle({name = "auto refill held gun", def = refillcfg.enabled,callback = function(value)
+	refillcfg.enabled = value
+end})
 -- // ui
 local ui1 = ui:section({name = "ui section",side = "left",size = 85})
 ui1:keybind({name = "menu key",def = config.windowkey,callback = function(key)
@@ -6233,47 +6240,109 @@ disconnect(_G.bulletsAddedCon)
 disconnect(_G.debrisAddedCon)
 
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
-	if stockfindercfg.item ~= "-" then
-		local char = plr.Character
-		if char == nil then return end
-
-		local hum: Humanoid = char:FindFirstChildWhichIsA("Humanoid")
-		if not hum then return end
-
-		local rootPart: BasePart = char:FindFirstChild("HumanoidRootPart")
-		if not rootPart then return end
-
-		local mapFolder: Folder = workspace:FindFirstChild("Map")
-		if not mapFolder then return end
-
-		local Shopz: Folder = mapFolder:FindFirstChild("Shopz")
-		if not Shopz then return end
-
-		local nearest = nil
-		local nearestDist = math.huge
-		for i, shopFolder: Folder in pairs(Shopz:GetChildren()) do
-			local mainPart = shopFolder:FindFirstChild("MainPart")
-			if mainPart then
-				local distance = (mainPart.Position - rootPart.Position).Magnitude
-				if distance < nearestDist then
-					nearest = shopFolder
-					nearestDist = distance
-				end
-			end
-		end
+	if refillcfg.enabled then
 		task.spawn(function()
-			if nearest ~= nil then
-				local name = stockfindercfg.item
-				local currentStocks: Folder = nearest:FindFirstChild("CurrentStocks")
-				if currentStocks then
-					local itemStock: IntConstrainedValue = currentStocks:FindFirstChild(name)
-					if itemStock and itemStock:IsA("IntConstrainedValue") and itemStock.Value > 0 then
-						stockfinderhighlight.Adornee = nearest
-						return
+			local char = plr.Character
+			if char == nil then return end
+
+			local tool = char:FindFirstChildWhichIsA("Tool")
+			if not tool then return end
+
+			local hum: Humanoid = char:FindFirstChildWhichIsA("Humanoid")
+			if not hum then return end
+
+			local rootPart: BasePart = char:FindFirstChild("HumanoidRootPart")
+			if not rootPart then return end
+
+			local mapFolder: Folder = workspace:FindFirstChild("Map")
+			if not mapFolder then return end
+
+			local Shopz: Folder = mapFolder:FindFirstChild("Shopz")
+			if not Shopz then return end
+
+			local nearest = nil
+			local nearestDist = math.huge
+			for i, shopFolder: Folder in pairs(Shopz:GetChildren()) do
+				local mainPart = shopFolder:FindFirstChild("MainPart")
+				if mainPart then
+					local distance = (mainPart.Position - rootPart.Position).Magnitude
+					if distance < nearestDist then
+						nearest = shopFolder
+						nearestDist = distance
 					end
 				end
 			end
-			stockfinderhighlight.Adornee = nil
+			if nearest ~= nil then
+				local mainPart = nearest:FindFirstChild("MainPart")
+				if not mainPart then return end
+				
+				if (mainPart.Position - rootPart.Position).Magnitude > 10 then return end
+				
+				local dealerType = "IllegalStore"
+				if nearest.Name == "ArmoryDealer" then
+					dealerType = "LegalStore"
+				end
+				local evsFolder = rp:FindFirstChild("Events")
+				if evsFolder then
+					local ev = evsFolder:FindFirstChild("SSHPRMTE1")
+					if ev then
+						ev:InvokeServer(
+							dealerType,
+							"Guns",
+							tool.Name,
+							mainPart,
+							"ResupplyAmmo",
+							true,
+							nil
+						)
+					end
+				end
+			end
+		end)
+	end
+	if stockfindercfg.item ~= "-" then
+		task.spawn(function()
+			local char = plr.Character
+			if char == nil then return end
+
+			local hum: Humanoid = char:FindFirstChildWhichIsA("Humanoid")
+			if not hum then return end
+
+			local rootPart: BasePart = char:FindFirstChild("HumanoidRootPart")
+			if not rootPart then return end
+
+			local mapFolder: Folder = workspace:FindFirstChild("Map")
+			if not mapFolder then return end
+
+			local Shopz: Folder = mapFolder:FindFirstChild("Shopz")
+			if not Shopz then return end
+
+			local nearest = nil
+			local nearestDist = math.huge
+			for i, shopFolder: Folder in pairs(Shopz:GetChildren()) do
+				local mainPart = shopFolder:FindFirstChild("MainPart")
+				if mainPart then
+					local distance = (mainPart.Position - rootPart.Position).Magnitude
+					if distance < nearestDist then
+						nearest = shopFolder
+						nearestDist = distance
+					end
+				end
+			end
+			task.spawn(function()
+				if nearest ~= nil then
+					local name = stockfindercfg.item
+					local currentStocks: Folder = nearest:FindFirstChild("CurrentStocks")
+					if currentStocks then
+						local itemStock: IntConstrainedValue = currentStocks:FindFirstChild(name)
+						if itemStock and itemStock:IsA("IntConstrainedValue") and itemStock.Value > 0 then
+							stockfinderhighlight.Adornee = nearest
+							return
+						end
+					end
+				end
+				stockfinderhighlight.Adornee = nil
+			end)
 		end)
 	end
 	if buycfg.autobuy then
