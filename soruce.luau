@@ -6936,7 +6936,7 @@ local setup = function()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	params.FilterDescendantsInstances = {plr.Character}
 	local raycast = workspace:Raycast(origin, direction, params)
-	if raycast ~= nil then
+	if (raycast ~= nil and raycast.Instance.Transparency < 1 and raycast.Instance.CanCollide and raycast.Instance.CanQuery and raycast.Instance.CanTouch) then
 		rainParticles.Enabled = false
 		ts:Create(
 			equalizer,
