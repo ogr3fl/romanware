@@ -266,6 +266,7 @@ function library:new(props)
 			TextXAlignment = "Center",
 			TextSize = textsize,
 			TextStrokeTransparency = 0,
+			Name = "romanwaretitle",
 			Parent = title
 		}
 	)
@@ -5846,6 +5847,21 @@ end})
 visuals6:slider({name = "xp bar progress", def = lvlSpooferCfg.barProgress, max = 1,min = 0,rounding = false,ticking = false,measuring = "",callback = function(value)
 	lvlSpooferCfg.barProgress = value
 end})
+local cashSpooferCfg = {
+	enabled = false,
+	bank = 0,
+	cash = 0
+}
+local visuals7 = visuals:section({name = "cash spoofer",side = "right",size = 120})
+visuals7:toggle({name = "enabled",def = cashSpooferCfg.enabled,callback = function(value)
+	cashSpooferCfg.enabled = value
+end})
+visuals7:textbox({name = "bank", def = cashSpooferCfg.bank, PlaceholderText = "enter $", callback = function(chosen)
+	cashSpooferCfg.bank = (tonumber(chosen) or 0)
+end})
+visuals7:textbox({name = "cash", def = cashSpooferCfg.cash, PlaceholderText = "enter $", callback = function(chosen)
+	cashSpooferCfg.cash = (tonumber(chosen) or 0)
+end})
 
 local visuals3 = visuals:section({name = "viewmodel",side = "right",size = 545})
 visuals3:toggle({name = "override position",def = config.overrideposition,callback = function(value)
@@ -7028,7 +7044,64 @@ task.spawn(function()
 	end
 end)
 
+local comma_value = function(amount)
+	local formatted = amount
+	while true do  
+		formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+		if (k==0) then
+			break
+		end
+	end
+	return formatted
+end
+
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	local romanwarewindow = plr.PlayerGui:FindFirstChild("romanware")
+	if romanwarewindow then
+		local romanwaretitle = romanwarewindow:FindFirstChild("romanwaretitle", true)
+		if romanwaretitle then
+			local dayOfTheWeek = os.date("%A"):lower()
+			local month = os.date("%B"):lower()
+			local dayOfTheMonth = os.date("%d")
+			local hour = os.date("%I")
+			local pmAm = os.date("%p")
+			local minute = os.date("%M")
+			romanwaretitle.Text = "romanware || ".. dayOfTheWeek.. ", ".. month.. " ".. dayOfTheMonth.. ", ".. hour	.. ":".. minute.. " ".. pmAm
+		end
+	end
+	if cashSpooferCfg.enabled then
+		local plrgui = plr.PlayerGui
+		if plrgui then
+			local cg = plrgui:FindFirstChild("CoreGUI")
+			if cg then
+				local sf = cg:FindFirstChild("StatsFrame")
+				if sf then
+					local frame2 = sf:FindFirstChild("Frame2")
+					if frame2 then
+						local frame = frame2:FindFirstChild("Frame")
+						if frame then
+							local container = frame:FindFirstChild("Container")
+							if container then
+								local bank, cash = container:FindFirstChild("Bank"), container:FindFirstChild("Cash")
+								if bank then
+									local amt = bank:FindFirstChild("Amt")
+									if amt then
+										amt.Text = "$".. comma_value(tostring(cashSpooferCfg.bank))
+									end
+								end
+								if cash then
+									local amt = cash:FindFirstChild("Amt")
+									if amt then
+										amt.Text = "$".. comma_value(tostring(cashSpooferCfg.cash))
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	end
 	if lvlSpooferCfg.enabled then
 		local leaderstats = plr:FindFirstChild("leaderstats")
 		if leaderstats then
