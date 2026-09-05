@@ -5241,6 +5241,8 @@ local config = {
 	nosmokeoverlay = false,
 	noflash = false,
 	nofdmg = false,
+	norfdmg = false,
+	nodrowning = false,
 	locks = false,
 	infpepper = false,
 	nohelmgui = false,
@@ -6106,7 +6108,7 @@ visuals4:slider({name = "atmosphere density", def = rainconfig.atmosphereDensity
 end})
 
 -- // misc
-local misc1 = misc:section({name = "misc section 1",side = "left",size = 610})
+local misc1 = misc:section({name = "misc section 1",side = "left",size = 655})
 local misc2 = misc:section({name = "teleports",side = "right",size = 800})
 local teleport = function(pos)
 	local char = plr.Character
@@ -6295,6 +6297,12 @@ misc1:toggle({name = "no dealer/atm freeze",def = config.nofreeze,callback = fun
 end})
 misc1:toggle({name = "no fall damage",def = config.nofdmg,callback = function(value)
 	config.nofdmg = value
+end})
+misc1:toggle({name = "no ragdoll fall damage",def = config.norfdmg,callback = function(value)
+	config.norfdmg = value
+end})
+misc1:toggle({name = "no drowning",def = config.nodrowning,callback = function(value)
+	config.nodrowning = value
 end})
 misc1:toggle({name = "easy lockpicks",def = config.locks,callback = function(value)
 	config.locks = value
@@ -6998,6 +7006,25 @@ task.spawn(function()
 end)
 
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	if config.nodrowning then
+		local CharStats = rp:FindFirstChild("CharStats")
+		if CharStats then
+			local us = CharStats:FindFirstChild(plr.Name)
+			if us then
+				local Currents = us:FindFirstChild("Currents")
+				if Currents then
+					local Underwater = Currents:FindFirstChild("Underwater")
+					if Underwater then
+						task.defer(Underwater.Destroy, Underwater)
+					end
+					local Drowning = Currents:FindFirstChild("Drowning")
+					if Drowning then
+						task.defer(Drowning.Destroy, Drowning)
+					end
+				end
+			end
+		end
+	end
 	if config.synctime then
 		lightingserv.TimeOfDay = os.date("!%X", os.time()):sub(1, 8)
 	end
@@ -7962,6 +7989,22 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 
 	local char = plr.Character
 	if char ~= nil then
+		if config.norfdmg then
+			local findpart = function(name)
+				local part = char:FindFirstChild(name)
+				if part and part:IsA("BasePart") then
+					part.CanTouch = false
+					part.CanQuery = false
+				end
+			end
+			findpart("Head")
+			findpart("HumanoidRootPart")
+			findpart("Torso")
+			findpart("Right Arm")
+			findpart("Left Arm")
+			findpart("Right Leg")
+			findpart("Left Leg")
+		end
 		local root = char:FindFirstChild("HumanoidRootPart")
 		if config.meleeaura then
 			local melee = char:FindFirstChildWhichIsA("Tool")
