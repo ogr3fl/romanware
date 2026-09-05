@@ -4701,7 +4701,424 @@ local movement = window:page({name = "movement"})
 local visuals = window:page({name = "visuals"})
 local misc = window:page({name = "misc"})
 local buy = window:page({name = "dealers"})
+local skinstab = window:page({name = "skins"})
 local ui = window:page({name = "ui"})
+
+-- // skins
+
+local formatTable = function(givenTable)
+	local oldTable = {"-"}
+	for i, c in pairs(givenTable) do
+		table.insert(oldTable, c.name)
+	end
+	return oldTable
+end
+local textures = {
+	m4a1 = {
+		{name = "aureus", skin = "rbxassetid://13714578814"},
+		{name = "circuit", skin = "rbxassetid://13841654362"},
+		{name = "colacamo", skin = "rbxassetid://16910927803"},
+		{name = "frostbite", skin = "rbxassetid://15695451364"},
+		{name = "gold", skin = "rbxassetid://18231287937"},
+		{name = "heritage", skin = "rbxassetid://18312055711"},
+		{name = "inferno", skin = "rbxassetid://15417229857"},
+		{name = "meltdown", skin = "rbxassetid://138263153339452"},
+		{name = "monochrome", skin = "rbxassetid://13388682540"},
+		{name = "patriot", skin = "rbxassetid://13945985275"},
+		{name = "subzero", skin = "rbxassetid://74488290583882"},
+		{name = "tiles", skin = "rbxassetid://13387870685"},
+		{name = "yellowstone", skin = "rbxassetid://15998610605"}
+	},
+	aks = {
+		{name = "battleworncamo", skin = "rbxassetid://13842104374"},
+		{name = "cherish", skin = "rbxassetid://16355374224"},
+		{name = "crimcola", skin = "rbxassetid://13387556541"},
+		{name = "decay74u", skin = "rbxassetid://96042163422893"},
+		{name = "draco", skin = "rbxassetid://13388090322"},
+		{name = "formula", skin = "rbxassetid://16010500192"},
+		{name = "frostbite", skin = "rbxassetid://86574930426293"},
+		{name = "gravebound", skin = "rbxassetid://80179995184396"},
+		{name = "jadestone", skin = "rbxassetid://13712920992"},
+		{name = "mire", skin = "rbxassetid://15177286670"},
+		{name = "sharkbite", skin = "rbxassetid://11684759812"}
+	},
+	glock = {
+		{name = "oxide", skin = "rbxassetid://13556385916"},
+		{name = "sage", skin = "rbxassetid://10898771076"},
+		{name = "digital_green", skin = "rbxassetid://9422494421"},
+		{name = "warhawk", skin = "rbxassetid://10898489161"},
+		{name = "elimination", skin = "rbxassetid://94164067871562"},
+		{name = "tan", skin = "rbxassetid://13841571102"},
+		{name = "yosei", skin = "rbxassetid://16040462957"},
+		{name = "night", skin = "rbxassetid://10899178487"},
+		{name = "hotpink", skin = "rbxassetid://15998557522"},
+		{name = "amethyst", skin = "rbxassetid://9344554991"},
+		{name = "benjamin", skin = "rbxassetid://18198686840"},
+		{name = "gleagle", skin = "rbxassetid://16911005097"},
+		{name = "grunch", skin = "rbxassetid://131243696649384"},
+		{name = "photon", skin = "rbxassetid://139614772944365"}
+	},
+	deagle = {
+		{name = "gold", skin = "rbxassetid://9422465914"},
+		{name = "plasma", skin = "rbxassetid://13567908266"},
+		{name = "eagleeye", skin = "rbxassetid://13937646988"},
+		{name = "acrylic", skin = "rbxassetid://13714048705"},
+		{name = "federation", skin = "rbxassetid://13841710519"},
+		{name = "gingerbread", skin = "rbxassetid://15695335320"},
+		{name = "exoticTest", skin = "rbxassetid://15445293206"},
+		{name = "ember", skin = "rbxassetid://16041798829"},
+		{name = "presidential", skin = "rbxassetid://18198669148"},
+		{name = "nacho", skin = "rbxassetid://16942393059"},
+		{name = "reaper", skin = "rbxassetid://129373670599388"},
+		{name = "aurora", skin = "rbxassetid://137473693247245"}
+	},
+	beretta = {
+		{name = "clef", skin = "rbxassetid://13387587315"},
+		{name = "moss", skin = "rbxassetid://13443011965"},
+		{name = "digital", skin = "rbxassetid://9341791793"},
+		{name = "tiger", skin = "rbxassetid://13704088639"},
+		{name = "urbanred", skin = "rbxassetid://13841595045"},
+		{name = "gold", skin = "rbxassetid://15071881699"},
+		{name = "woodenblaster", skin = "rbxassetid://15695411633"},
+		{name = "silvered", skin = "rbxassetid://15998409351"},
+		{name = "walker", skin = "rbxassetid://15177173325"},
+		{name = "vampirehunter", skin = "rbxassetid://137465478194507"},
+		{name = "fadedorchid", skin = "rbxassetid://129085891817339"}
+	},
+	m1911 = {
+		{name = "darkheart", skin = "rbxassetid://13564716720"},
+		{name = "ironsight", skin = "rbxassetid://13388236414"},
+		{name = "rebel", skin = "rbxassetid://13410196884"},
+		{name = "oldglory", skin = "rbxassetid://13948805827"},
+		{name = "stainless", skin = "rbxassetid://13842569053"},
+		{name = "sandwaves", skin = "rbxassetid://15998635906"},
+		{name = "unity", skin = "rbxassetid://18149757669"},
+		{name = "lunar", skin = "rbxassetid://89241722764611"}
+	},
+	bfg = {
+		{name = "federal", skin = "rbxassetid://13948416273"},
+		{name = "inferno", skin = "rbxassetid://16648247101"},
+		{name = "savior", skin = "rbxassetid://18316883517"},
+		{name = "cupid", skin = "rbxassetid://16355412948"}
+	},
+	fal = {
+		{name = "merlot", skin = "rbxassetid://13566072355"},
+		{name = "majesty", skin = "rbxassetid://12268008265"},
+		{name = "wintermaroon", skin = "rbxassetid://15710689399"},
+		{name = "purpleheart", skin = "rbxassetid://16040566002"}
+	},
+	fnp = {
+		{name = "bloodshot", skin = "rbxassetid://13566118019"},
+		{name = "tan", skin = "rbxassetid://15998532953"},
+		{name = "pulse", skin = "rbxassetid://16355357614"}
+	},
+	ithaca = {
+		{name = "engraved", skin = "rbxassetid://13388409062"},
+		{name = "reserve", skin = "rbxassetid://13841781874"},
+		{name = "blaze", skin = "rbxassetid://13703922904"},
+		{name = "homedefense", skin = "rbxassetid://13935302367"},
+		{name = "hellfire", skin = "rbxassetid://120094510362818"},
+		{name = "ithcuh", skin = "rbxassetid://16910986091"},
+		{name = "darkmatter", skin = "rbxassetid://15998572471"},
+		{name = "supernatural", skin = "rbxassetid://15183699872"},
+		{name = "linedlegacy", skin = "rbxassetid://13388409062"},
+		{name = "peppershot", skin = "rbxassetid://97444135069232"}
+	},
+	m320 = {
+		{name = "paintball", skin = "rbxassetid://13842613980"}
+	},
+	m60 = {
+		{name = "woodsplitter", skin = "rbxassetid://108644929135165"}
+	},
+	mac10 = {
+		{name = "sunrise", skin = "rbxassetid://13387823798"},
+		{name = "digital", skin = "rbxassetid://13388148081"},
+		{name = "cheese", skin = "rbxassetid://13556188816"},
+		{name = "tropical", skin = "rbxassetid://13712964810"},
+		{name = "lostnfound", skin = "rbxassetid://13841544929"},
+		{name = "freedom", skin = "rbxassetid://13935272075"},
+		{name = "lovelycamo", skin = "rbxassetid://16357659168"},
+		{name = "urbandispatch", skin = "rbxassetid://15998654861"},
+		{name = "harvest", skin = "rbxassetid://110907808308032"},
+		{name = "eaglespride", skin = "rbxassetid://18213166722"},
+		{name = "hazmac", skin = "rbxassetid://70974550171047"},
+		{name = "cryofox", skin = "rbxassetid://72676229182235"}
+	},
+	magnum = {
+		{name = "inferno", skin = "rbxassetid://13565647644"},
+		{name = "bronze", skin = "rbxassetid://13388529824"},
+		{name = "rust", skin = "rbxassetid://10946557133"},
+		{name = "abstract", skin = "rbxassetid://13851638932"},
+		{name = "bills", skin = "rbxassetid://13935343468"},
+		{name = "arcticapex", skin = "rbxassetid://15710938728"},
+		{name = "amour", skin = "rbxassetid://16355307379"},
+		{name = "ironhammer", skin = "rbxassetid://18319381612"},
+		{name = "456", skin = "rbxassetid://95811224387068"},
+		{name = "rustborne", skin = "rbxassetid://10946557133"}
+	},
+	mare = {
+		{name = "stallion", skin = "rbxassetid://13556460890"},
+		{name = "foamshot", skin = "rbxassetid://75041484171385"},
+		{name = "frostecho", skin = "rbxassetid://15695467218"},
+		{name = "rust", skin = "rbxassetid://16560187868"},
+		{name = "gold", skin = "rbxassetid://16560241772"},
+		{name = "maritime", skin = "rbxassetid://15998688488"},
+		{name = "trickshot", skin = "rbxassetid://16907785827"},
+		{name = "burial", skin = "rbxassetid://112931262763361"}
+	},
+	mp7 = {
+		{name = "navy", skin = "rbxassetid://13714362770"},
+		{name = "digital", skin = "rbxassetid://13703244857"},
+		{name = "olive", skin = "rbxassetid://13404159306"},
+		{name = "hellrazor", skin = "rbxassetid://13842812065"},
+		{name = "zombified", skin = "rbxassetid://15334894800"}
+	},
+	rpg7 = {
+		{name = "twotone", skin = "rbxassetid://13388377781"},
+		{name = "gold", skin = "rbxassetid://13715204837"},
+		{name = "boom", skin = "rbxassetid://10959329950"}
+	},
+	sawnoff = {
+		{name = "caution", skin = "rbxassetid://10959371093"},
+		{name = "banana", skin = "rbxassetid://13387455222"},
+		{name = "logs", skin = "rbxassetid://13556252494"},
+		{name = "gold", skin = "rbxassetid://13714456145"},
+		{name = "grandprix", skin = "rbxassetid://13841748041"},
+		{name = "glacial", skin = "rbxassetid://13030805318"},
+		{name = "multicam", skin = "rbxassetid://15998421369"},
+		{name = "webs", skin = "rbxassetid://15177076142"},
+		{name = "ectoplasm", skin = "rbxassetid://128902407409114"},
+		{name = "radiumscatter", skin = "rbxassetid://126628134932565"},
+		{name = "tarnishedholly", skin = "rbxassetid://119729701797306"}
+	},
+	scarh = {
+		{name = "milspec", skin = "rbxassetid://13703885359"},
+		{name = "gridlines", skin = "rbxassetid://16010525894"},
+		{name = "torchbearer", skin = "rbxassetid://18167598887"}
+	},
+	scout = {
+		{name = "redwood", skin = "rbxassetid://13713216013"}
+	},
+	sks = {
+		{name = "digital", skin = "rbxassetid://9341995268"},
+		{name = "modern", skin = "rbxassetid://13388175991"},
+		{name = "jester", skin = "rbxassetid://13343167267"},
+		{name = "copper", skin = "rbxassetid://13394135741"},
+		{name = "umbrella", skin = "rbxassetid://13841605579"},
+		{name = "fatalcontest", skin = "rbxassetid://79663004296755"},
+		{name = "snowcoat", skin = "rbxassetid://111855555460594"},
+		{name = "gold", skin = "rbxassetid://16300596462"},
+		{name = "jacko", skin = "rbxassetid://15177197176"},
+		{name = "paragon", skin = "rbxassetid://15998710430"},
+		{name = "nevermore", skin = "rbxassetid://114269350268484"}
+	},
+	sshorty = {
+		{name = "firecracker", skin = "rbxassetid://18149799297"},
+		{name = "gonggi", skin = "rbxassetid://77120672555697"},
+		{name = "steel", skin = "rbxassetid://13394161570"},
+		{name = "checkmate", skin = "rbxassetid://13713146952"},
+		{name = "loveletter", skin = "rbxassetid://16355338517"}
+	},
+	tec9 = {
+		{name = "star9", skin = "rbxassetid://13387502788"},
+		{name = "snakeskin", skin = "rbxassetid://13566186022"},
+		{name = "import", skin = "rbxassetid://13556231753"},
+		{name = "diner", skin = "rbxassetid://13712979305"},
+		{name = "lilac", skin = "rbxassetid://13841531857"},
+		{name = "cottoncloud", skin = "rbxassetid://15998726079"},
+		{name = "silentorder", skin = "rbxassetid://92158078338766"},
+		{name = "liberty", skin = "rbxassetid://13935385791"},
+		{name = "burgundypine", skin = "rbxassetid://134671657569127"}
+	},
+	tommy = {
+		{name = "plum", skin = "rbxassetid://13388349585"},
+		{name = "mobster", skin = "rbxassetid://13387532472"},
+		{name = "huntinglodge", skin = "rbxassetid://128285305729440"},
+		{name = "leatherworks", skin = "rbxassetid://13556313114"},
+		{name = "currant", skin = "rbxassetid://13841583772"},
+		{name = "unclesam", skin = "rbxassetid://13936670325"},
+		{name = "gold", skin = "rbxassetid://15039147920"},
+		{name = "headstone", skin = "rbxassetid://15177084790"}
+	},
+	ump = {
+		{name = "honeycomb", skin = "rbxassetid://13713087658"},
+		{name = "burntumber", skin = "rbxassetid://13842574571"},
+		{name = "daejang", skin = "rbxassetid://125942364208210"},
+		{name = "lesion", skin = "rbxassetid://15177221559"}
+	},
+	uzi = {
+		{name = "crimsonjaw", skin = "rbxassetid://13343335417"},
+		{name = "grape", skin = "rbxassetid://13387917991"},
+		{name = "coldshell", skin = "rbxassetid://117085656996740"},
+		{name = "rust", skin = "rbxassetid://13715502850"},
+		{name = "smiley", skin = "rbxassetid://13841666943"},
+		{name = "pumpkinspice", skin = "rbxassetid://15177112812"},
+		{name = "guilded", skin = "rbxassetid://15998740952"},
+		{name = "grape2", skin = "rbxassetid://16952083915"}
+	}
+}
+local cfg = {
+	enabled = false,
+	m4a1 = "-",
+	aks = "-",
+	glock = "-",
+	deagle = "-",
+	m1911 = "-",
+	beretta = "-",
+	bfg = "-",
+	fal = "-",
+	fnp = "-",
+	ithaca = "-",
+	m320 = "-",
+	m60 = "-",
+	mac10 = "-",
+	magnum = "-",
+	mare = "-",
+	mp7 = "-",
+	rpg7 = "-",
+	sawnoff = "-",
+	scarh = "-",
+	scout = "-",
+	sks = "-",
+	sshorty = "-",
+	tec9 = "-",
+	tommy = "-",
+	ump = "-",
+	uzi = "-"
+
+}
+local skins = skinstab:section({name = "skin changer",side = "left",size = 1100})
+skins:toggle({name = "enabled [performance-heavy]",def = cfg.enabled,textcolor = Color3.new(1, .8, .8), callback = function(value)
+	cfg.enabled = value
+end})
+skins:dropdown({name = "M4A1",def = cfg.m4a1,max = 999,options = formatTable(textures.m4a1),callback = function(chosen)
+	cfg.m4a1 = chosen
+end})
+skins:dropdown({name = "AKS-74U",def = cfg.aks,max = 999,options = formatTable(textures.aks),callback = function(chosen)
+	cfg.aks = chosen
+end})
+skins:dropdown({name = "Glock",def = cfg.glock,max = 999,options = formatTable(textures.glock),callback = function(chosen)
+	cfg.glock = chosen
+end})
+skins:dropdown({name = "Deagle",def = cfg.deagle,max = 999,options = formatTable(textures.deagle),callback = function(chosen)
+	cfg.deagle = chosen
+end})
+skins:dropdown({name = "M1911",def = cfg.m1911,max = 999,options = formatTable(textures.m1911),callback = function(chosen)
+	cfg.m1911 = chosen
+end})
+skins:dropdown({name = "Beretta",def = cfg.beretta,max = 999,options = formatTable(textures.beretta),callback = function(chosen)
+	cfg.beretta = chosen
+end})
+skins:dropdown({name = "BFG",def = cfg.bfg,max = 999,options = formatTable(textures.bfg),callback = function(chosen)
+	cfg.bfg = chosen
+end})
+skins:dropdown({name = "FAL",def = cfg.fal,max = 999,options = formatTable(textures.fal),callback = function(chosen)
+	cfg.fal = chosen
+end})
+skins:dropdown({name = "FNP",def = cfg.fnp,max = 999,options = formatTable(textures.fnp),callback = function(chosen)
+	cfg.fnp = chosen
+end})
+skins:dropdown({name = "Ithaca",def = cfg.ithaca,max = 999,options = formatTable(textures.ithaca),callback = function(chosen)
+	cfg.ithaca = chosen
+end})
+skins:dropdown({name = "M320",def = cfg.m320,max = 999,options = formatTable(textures.m320),callback = function(chosen)
+	cfg.m320 = chosen
+end})
+skins:dropdown({name = "M60",def = cfg.m60,max = 999,options = formatTable(textures.m60),callback = function(chosen)
+	cfg.m60 = chosen
+end})
+skins:dropdown({name = "MAC-10",def = cfg.mac10,max = 999,options = formatTable(textures.mac10),callback = function(chosen)
+	cfg.mac10 = chosen
+end})
+skins:dropdown({name = "Magnum",def = cfg.magnum,max = 999,options = formatTable(textures.magnum),callback = function(chosen)
+	cfg.magnum = chosen
+end})
+skins:dropdown({name = "Mare",def = cfg.mare,max = 999,options = formatTable(textures.mare),callback = function(chosen)
+	cfg.mare = chosen
+end})
+skins:dropdown({name = "MP7",def = cfg.mp7,max = 999,options = formatTable(textures.mp7),callback = function(chosen)
+	cfg.mp7 = chosen
+end})
+skins:dropdown({name = "RPG-7",def = cfg.rpg7,max = 999,options = formatTable(textures.rpg7),callback = function(chosen)
+	cfg.rpg7 = chosen
+end})
+skins:dropdown({name = "Sawnoff",def = cfg.sawnoff,max = 999,options = formatTable(textures.sawnoff),callback = function(chosen)
+	cfg.sawnoff = chosen
+end})
+skins:dropdown({name = "SCAR-H",def = cfg.scarh,max = 999,options = formatTable(textures.scarh),callback = function(chosen)
+	cfg.scarh = chosen
+end})
+skins:dropdown({name = "Scout",def = cfg.scout,max = 999,options = formatTable(textures.scout),callback = function(chosen)
+	cfg.scout = chosen
+end})
+skins:dropdown({name = "SKS",def = cfg.sks,max = 999,options = formatTable(textures.sks),callback = function(chosen)
+	cfg.sks = chosen
+end})
+skins:dropdown({name = "Shorty",def = cfg.sshorty,max = 999,options = formatTable(textures.sshorty),callback = function(chosen)
+	cfg.sshorty = chosen
+end})
+skins:dropdown({name = "TEC-9",def = cfg.tec9,max = 999,options = formatTable(textures.tec9),callback = function(chosen)
+	cfg.tec9 = chosen
+end})
+skins:dropdown({name = "Tommy Gun",def = cfg.tommy,max = 999,options = formatTable(textures.tommy),callback = function(chosen)
+	cfg.tommy = chosen
+end})
+skins:dropdown({name = "UMP",def = cfg.ump,max = 999,options = formatTable(textures.ump),callback = function(chosen)
+	cfg.ump = chosen
+end})
+skins:dropdown({name = "Uzi",def = cfg.uzi,max = 999,options = formatTable(textures.uzi),callback = function(chosen)
+	cfg.uzi = chosen
+end})
+
+local function getSkinByName(name, gtable)
+	for _, entry in ipairs(gtable) do
+		if entry.name == name then
+			return entry.skin, entry.name
+		end
+	end
+	return nil, nil
+end
+
+local apply = function(tool, cfgValue, texturesValue)
+	if cfgValue ~= "-" then
+		for i, v in pairs(tool:GetDescendants()) do
+			if v:IsA("SurfaceAppearance") then
+				task.defer(v.Destroy, v)
+			elseif v:IsA("MeshPart") then
+				v.TextureID = getSkinByName(cfgValue, texturesValue)
+			end
+		end
+	end
+end
+local applyDisplayModel = function(char, tool, cfgValue, texturesValue)
+	if cfgValue ~= "-" then
+		local DisplayItems = char:FindFirstChild("DisplayItems")
+		if DisplayItems then
+			local DisplayItem = DisplayItems:FindFirstChild(tool.Name)
+			if DisplayItem then
+				for i, v in pairs(DisplayItem:GetDescendants()) do
+					if v:IsA("SurfaceAppearance") then
+						task.defer(v.Destroy, v)
+					elseif v:IsA("MeshPart") then
+						v.TextureID = getSkinByName(cfgValue, texturesValue)
+					end
+				end
+			end
+		end
+	end
+end
+
+local searchForTool = function(char, displayitems, name, upgradedname, cfgvalue, texturesvalue)
+	if upgradedname == nil then upgradedname = name end
+	local normaltool = char:FindFirstChild(name) or char:FindFirstChild(upgradedname)
+	if normaltool then
+		apply(normaltool, cfgvalue, texturesvalue)
+	end
+	local displaytool = displayitems:FindFirstChild(name) or displayitems:FindFirstChild(upgradedname)
+	if displaytool then
+		apply(displaytool, cfgvalue, texturesvalue)
+	end
+end
 
 -- // variables
 local rainconfig = {
@@ -6533,6 +6950,39 @@ task.spawn(function()
 end)
 
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	local char = plr.Character
+	if char ~= nil and cfg.enabled then
+		local DisplayItems = char:FindFirstChild("DisplayItems")
+		if DisplayItems then
+			searchForTool(char, DisplayItems, "M4A1-1", "M4A1-S", cfg.m4a1, textures.m4a1)
+			searchForTool(char, DisplayItems, "AKS-74U", "AKS-74U-X", cfg.aks, textures.aks)
+			searchForTool(char, DisplayItems, "G-17", "G-17", cfg.glock, textures.glock)
+			searchForTool(char, DisplayItems, "G-18", "G-18-X", cfg.glock, textures.glock)
+			searchForTool(char, DisplayItems, "Deagle", "Deagle", cfg.deagle, textures.deagle)
+			searchForTool(char, DisplayItems, "Beretta", "Beretta", cfg.beretta, textures.beretta)
+			searchForTool(char, DisplayItems, "M1911", "M1911", cfg.m1911, textures.m1911)
+			searchForTool(char, DisplayItems, "BFG", "BFG", cfg.bfg, textures.bfg)
+			searchForTool(char, DisplayItems, "FN-FAL", "FN-FAL-S", cfg.fal, textures.fal)
+			searchForTool(char, DisplayItems, "FNP-45", "FNP-45", cfg.fnp, textures.fnp)
+			searchForTool(char, DisplayItems, "Ithaca-37", "Ithaca-37", cfg.ithaca, textures.ithaca)
+			searchForTool(char, DisplayItems, "M320-1", "M320-2", cfg.m320, textures.m320)
+			searchForTool(char, DisplayItems, "M60", "M60", cfg.m60, textures.m60)
+			searchForTool(char, DisplayItems, "MAC-10", "MAC-10-S", cfg.mac10, textures.mac10)
+			searchForTool(char, DisplayItems, "Magnum", "Magnum", cfg.magnum, textures.magnum)
+			searchForTool(char, DisplayItems, "Mare", "Mare", cfg.mare, textures.mare)
+			searchForTool(char, DisplayItems, "MP7", "MP7-S", cfg.mp7, textures.mp7)
+			searchForTool(char, DisplayItems, "RPG-7", "RPG-7", cfg.rpg7, textures.rpg7)
+			searchForTool(char, DisplayItems, "Sawn-Off", "Sawn-Off", cfg.sawnoff, textures.sawnoff)
+			searchForTool(char, DisplayItems, "SCAR-H-1", "SCAR-H-X", cfg.scarh, textures.scarh)
+			searchForTool(char, DisplayItems, "Scout", "Scout", cfg.scout, textures.scout)
+			searchForTool(char, DisplayItems, "SKS", "SKS-X", cfg.sks, textures.sks)
+			searchForTool(char, DisplayItems, "Super-Shorty", "Super-Shorty", cfg.sshorty, textures.sshorty)
+			searchForTool(char, DisplayItems, "TEC-9", "TEC-9", cfg.tec9, textures.tec9)
+			searchForTool(char, DisplayItems, "Tommy", "Tommy-S", cfg.tommy, textures.tommy)
+			searchForTool(char, DisplayItems, "UMP-45", "UMP-45-S", cfg.ump, textures.ump)
+			searchForTool(char, DisplayItems, "Uzi", "Uzi-S", cfg.uzi, textures.uzi)
+		end
+	end
 	if rainconfig.rainenabled then
 		setup()
 		for i = 1, rainconfig.rainRate do
