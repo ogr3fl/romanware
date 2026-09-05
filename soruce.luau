@@ -5819,9 +5819,32 @@ fly1:toggle({name = "noclip",def = config.flynoclip,callback = function(value)
 end})
 
 -- // visuals
-local visuals5 = visuals:section({name = "extras",side = "right",size = 45})
+local visuals5 = visuals:section({name = "syncing",side = "right",size = 45})
 visuals5:toggle({name = "sync game time to irl time",def = config.synctime,callback = function(value)
 	config.synctime = value
+end})
+local lvlSpooferCfg = {
+	enabled = false,
+	level = "0",
+	xpObtained = "0",
+	xpNeeded = "0",
+	barProgress = 0,
+}
+local visuals6 = visuals:section({name = "level spoofer",side = "right",size = 205})
+visuals6:toggle({name = "enabled",def = lvlSpooferCfg.enabled,callback = function(value)
+	lvlSpooferCfg.enabled = value
+end})
+visuals6:textbox({name = "level", def = lvlSpooferCfg.level, PlaceholderText = "enter level", callback = function(chosen)
+	lvlSpooferCfg.level = chosen
+end})
+visuals6:textbox({name = "xp obtained", def = lvlSpooferCfg.xpObtained, PlaceholderText = "enter xp", callback = function(chosen)
+	lvlSpooferCfg.xpObtained = chosen
+end})
+visuals6:textbox({name = "xp needed", def = lvlSpooferCfg.xpNeeded, PlaceholderText = "enter xp", callback = function(chosen)
+	lvlSpooferCfg.xpNeeded = chosen
+end})
+visuals6:slider({name = "xp bar progress", def = lvlSpooferCfg.barProgress, max = 1,min = 0,rounding = false,ticking = false,measuring = "",callback = function(value)
+	lvlSpooferCfg.barProgress = value
 end})
 
 local visuals3 = visuals:section({name = "viewmodel",side = "right",size = 545})
@@ -7006,6 +7029,43 @@ task.spawn(function()
 end)
 
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	if lvlSpooferCfg.enabled then
+		local leaderstats = plr:FindFirstChild("leaderstats")
+		if leaderstats then
+			local Level = leaderstats:FindFirstChild("Level")
+			if Level then
+				Level.Value = (tonumber(lvlSpooferCfg.level) or 0)
+			end
+		end
+		local plrgui = plr.PlayerGui
+		if plrgui then
+			local cg = plrgui:FindFirstChild("CoreGUI")
+			if cg then
+				local lf = cg:FindFirstChild("LevelFrame")
+				if lf then
+					local bar = lf:FindFirstChild("Bar")
+					local lvlbox = lf:FindFirstChild("LevelBox")
+					if lvlbox and bar then
+						local lvlnum = lvlbox:FindFirstChild("LevelNumber")
+						local bar2 = bar:FindFirstChild("Bar2")
+						local stat = bar:FindFirstChild("Stat")
+						if lvlnum and bar2 and stat then
+							local BG = bar2:FindFirstChild("BG")
+							if BG then
+								lvlnum.Text = (lvlSpooferCfg.level or "")
+								if lvlSpooferCfg.xpObtained ~= nil and lvlSpooferCfg.xpNeeded ~= nil then
+									stat.Text = `{lvlSpooferCfg.xpObtained}/{lvlSpooferCfg.xpNeeded} XP`
+								else 
+									stat.Text = `0/0 XP`
+								end
+								BG.Size = UDim2.fromScale(lvlSpooferCfg.barProgress, 1)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
 	if config.nodrowning then
 		local CharStats = rp:FindFirstChild("CharStats")
 		if CharStats then
