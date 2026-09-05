@@ -4704,7 +4704,40 @@ local buy = window:page({name = "dealers"})
 local ui = window:page({name = "ui"})
 
 -- // variables
+local rainconfig = {
+	rainenabled = false,
+	thunderenabled = false,
+	brightness = 0.35,
+	atmosphereDensity = 0.375,
+	sky = {
+		bk = "rbxassetid://4113086305",
+		dn = "rbxassetid://4113198020",
+		ft = "rbxassetid://4113201172",
+		lf = "rbxassetid://4113217752",
+		rt = "rbxassetid://4113223393",
+		up = "rbxassetid://4113224075"
+	},
+	rainSound = "rbxassetid://5911952995",
+	rainVolume = 0.45,
+	thunderstormSounds = {
+		"rbxassetid://98475301252749",
+		"rbxassetid://102331984100037"
+	},
+	thunderstormVolume = 1,
 
+
+	thunderstormRange = 9999, -- distance from camera (3d thunderstorm)
+
+	rainOriginHeight = 5000, -- rain droplet origin (cloud height)
+	rainRate = 35,
+	rainRange = 150, -- max distance from camera
+	thunderstormRate = {10, 30},
+
+	equalizerHigh = -15,
+	equalizerLow = 5,
+	equalizerMid = 8,
+	equalizerTween = TweenInfo.new(.3, Enum.EasingStyle.Linear)
+}
 local config = {
 	-- // combat
 	projectilecontrol = false,
@@ -5625,6 +5658,20 @@ visuals1:toggle({name = "clear character",def = config.clearcharacter,callback =
 	end
 end})
 
+local visuals4 = visuals:section({name = "weather",side = "left",size = 125})
+visuals4:toggle({name = "rain",def = rainconfig.rainenabled,callback = function(value)
+	rainconfig.rainenabled = value
+end})
+visuals4:slider({name = "rain rate",def = rainconfig.rainRate, max = 100,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
+	rainconfig.rainRate = value
+end})
+visuals4:slider({name = "rain range",def = rainconfig.rainRange, max = 200,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
+	rainconfig.rainRange = value
+end})
+visuals4:toggle({name = "thunder",def = rainconfig.thunderenabled,callback = function(value)
+	rainconfig.thunderenabled = value
+end})
+
 -- // misc
 local misc1 = misc:section({name = "misc section 1",side = "left",size = 610})
 local misc2 = misc:section({name = "teleports",side = "right",size = 800})
@@ -6239,7 +6286,259 @@ disconnect(_G.romanwareUisInputEndedCon_1)
 disconnect(_G.bulletsAddedCon)
 disconnect(_G.debrisAddedCon)
 
+local lightingserv = game:GetService("Lighting")
+local debrisserv = game:GetService("Debris")
+
+local createRainDroplet = function()
+	local origin = Vector3.new(
+		cam.CFrame.X + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange),
+		rainconfig.rainOriginHeight,
+		cam.CFrame.Z + Random.new():NextNumber(-rainconfig.rainRange, rainconfig.rainRange)
+	)
+	local destination = origin - Vector3.new(0, 1, 0)
+	local direction = (destination - origin).Unit*9999
+	local params = RaycastParams.new()
+	local localcharacter, characters, filter, debrisF = plr.Character, workspace:FindFirstChild("Characters"), workspace:FindFirstChild("Filter"), workspace:FindFirstChild("Debris")
+	params.ExcludeInstances = {localcharacter, characters, filter, debrisF}
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local raycast = workspace:Raycast(origin, direction, params)
+	if raycast ~= nil then
+		local newRainDroplet = Instance.new("Part")
+		newRainDroplet.Name = "RainDroplet"
+		newRainDroplet.CanCollide = false
+		newRainDroplet.CanTouch = false
+		newRainDroplet.CanQuery = false
+		newRainDroplet.Locked = true
+		newRainDroplet.Archivable = false
+		newRainDroplet.Material = Enum.Material.Neon
+		newRainDroplet.Size = Vector3.new(0.5,0.5,0.5)
+		newRainDroplet.Anchored = true
+		newRainDroplet.Transparency = 1
+		newRainDroplet.CastShadow = false
+		newRainDroplet.Shape = Enum.PartType.Ball
+
+		local dropletParticle = Instance.new("ParticleEmitter")
+		dropletParticle.Name = "DropletParticle"
+		dropletParticle.Parent = newRainDroplet
+		dropletParticle.LightEmission = 12312
+		dropletParticle.Brightness = 1
+		dropletParticle.LightInfluence = 0
+		dropletParticle.Color = ColorSequence.new(Color3.new(1,1,1))
+		dropletParticle.Size = NumberSequence.new(0, 1)
+		dropletParticle.Texture = "rbxassetid://241576804"
+		dropletParticle.Squash = NumberSequence.new(0)
+		dropletParticle.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.45),    -- Start: transparent (0)
+			NumberSequenceKeypoint.new(1, 1),  -- Middle: fully opaque (1)
+			--NumberSequenceKeypoint.new(1, 0)     -- End: transparent (0)
+		})
+		dropletParticle.ZOffset = 0
+		dropletParticle.EmissionDirection = Enum.NormalId.Back
+		dropletParticle.Lifetime = NumberRange.new(0.5)
+		dropletParticle.Acceleration = Vector3.new(0, -25, 0)
+		dropletParticle.Rotation = NumberRange.new(-20)
+		dropletParticle.Rate = 0
+		dropletParticle.Speed = NumberRange.new(-3)
+		dropletParticle.Orientation = Enum.ParticleOrientation.FacingCamera
+		dropletParticle:Emit(1)
+
+		newRainDroplet.CFrame = CFrame.new(raycast.Position, raycast.Position + raycast.Normal)
+		debrisserv:AddItem(newRainDroplet, dropletParticle.Lifetime.Max)
+
+		local rainDropletsFolder = cam:FindFirstChild("RainDroplets")
+		if not rainDropletsFolder then
+			rainDropletsFolder = Instance.new("Folder")
+			rainDropletsFolder.Name = "RainDroplets"
+			rainDropletsFolder.Parent = cam
+		end
+		newRainDroplet.Parent = rainDropletsFolder
+	end
+end
+
+local createThunderstorm = function()
+	local newThunderStormPart = Instance.new("Part")
+	newThunderStormPart.Name = "ThunderstormPart"
+	newThunderStormPart.Size = Vector3.new(1,1,1)
+	newThunderStormPart.CanCollide = false
+	newThunderStormPart.CanTouch = false
+	newThunderStormPart.CanQuery = false
+	newThunderStormPart.Anchored = true
+	newThunderStormPart.Transparency = 1
+	newThunderStormPart.Locked = true
+	newThunderStormPart.Archivable = false
+	newThunderStormPart.CFrame = CFrame.new(
+		cam.CFrame.X + Random.new():NextNumber(-rainconfig.thunderstormRange, rainconfig.thunderstormRange),
+		cam.CFrame.Y,
+		cam.CFrame.X + Random.new():NextNumber(-rainconfig.thunderstormRange, rainconfig.thunderstormRange)
+	)
+	newThunderStormPart.Parent = cam
+
+	local newThunderStormSound = Instance.new("Sound")
+	newThunderStormSound.SoundId = rainconfig.thunderstormSounds[math.random(1,#rainconfig.thunderstormSounds)]
+	newThunderStormSound.Volume = rainconfig.thunderstormVolume
+	newThunderStormSound.RollOffMode = Enum.RollOffMode.Linear
+	newThunderStormSound.RollOffMaxDistance = 100000
+	newThunderStormSound.RollOffMinDistance = 0
+	newThunderStormSound.Parent = newThunderStormPart
+	newThunderStormSound:Play()
+
+	local newColorCorrectionEffect: ColorCorrectionEffect = Instance.new("ColorCorrectionEffect")
+	newColorCorrectionEffect.Name = "ThunderstormCC"
+	newColorCorrectionEffect.Parent = lightingserv
+	local colorCorrectionConnection = rs.PreRender:Connect(function()
+		ts:Create(
+			newColorCorrectionEffect,
+			TweenInfo.new(.3),
+			{
+				Brightness = (newThunderStormSound.PlaybackLoudness/1000)
+			}
+		):Play()
+	end)
+
+	newThunderStormSound.Ended:Once(function()
+		colorCorrectionConnection:Disconnect()
+		task.defer(newColorCorrectionEffect.Destroy, newColorCorrectionEffect)
+		task.defer(newThunderStormPart.Destroy, newThunderStormPart)
+	end)
+
+	if rs:IsStudio() then
+		warn("> Thunderstorm effect has been created.")
+	end
+end
+
+local setup = function()
+	local rainPart = cam:FindFirstChild("RainPart")
+	if not rainPart then
+		rainPart = Instance.new("Part")
+		rainPart.Name = "RainPart"
+		rainPart.Parent = cam
+	end
+	rainPart.Transparency = 1
+	rainPart.CanCollide = false
+	rainPart.CanQuery = false
+	rainPart.CanTouch = false
+	rainPart.Archivable = false
+	rainPart.Locked = true
+	rainPart.Anchored = true
+	rainPart.Size = Vector3.new(50, 0, 50)
+	rainPart.Position = cam.CFrame.Position + Vector3.new(0, 15, 0)
+	local rainParticles: ParticleEmitter = rainPart:FindFirstChild("RainParticles")
+	if not rainParticles then
+		rainParticles = Instance.new("ParticleEmitter")
+		rainParticles.Name = "RainParticles"
+		rainParticles.Parent = rainPart
+	end
+	rainParticles.Color = ColorSequence.new(Color3.fromRGB(229, 235, 255), Color3.fromRGB(175, 186, 204))
+	rainParticles.LightEmission = 1
+	rainParticles.LightInfluence = 0
+	rainParticles.Brightness = 1
+	rainParticles.Orientation = Enum.ParticleOrientation.FacingCameraWorldUp
+	rainParticles.Size = NumberSequence.new(1.5)
+	rainParticles.Squash = NumberSequence.new(0.5)
+	rainParticles.Texture = "http://www.roblox.com/asset/?id=3806148993"
+	rainParticles.Transparency = NumberSequence.new(0.8, 1)
+	rainParticles.EmissionDirection = Enum.NormalId.Bottom
+	rainParticles.Rate = 100000
+	rainParticles.Lifetime = NumberRange.new(0.2)
+	rainParticles.Speed = NumberRange.new(200)
+	rainParticles.LockedToPart = true
+
+	lightingserv.Brightness = rainconfig.brightness
+	--[[local sunray: SunRaysEffect = lighting:FindFirstChildWhichIsA("SunRaysEffect")
+	if sunray then
+		sunray.Enabled = false
+	end]]--
+	local rainAmbience = workspace:FindFirstChild("RainAmbience")
+	if not rainAmbience then
+		rainAmbience = Instance.new("Sound")
+		rainAmbience.Name = "RainAmbience"
+		rainAmbience.Parent = workspace
+	end
+	rainAmbience.SoundId = rainconfig.rainSound
+	rainAmbience.Volume = rainconfig.rainVolume
+	rainAmbience.Playing = true
+	rainAmbience.Looped = true
+	local equalizer = rainAmbience:FindFirstChildWhichIsA("EqualizerSoundEffect")
+	if not equalizer then
+		equalizer = Instance.new("EqualizerSoundEffect")
+		equalizer.Parent = rainAmbience
+	end
+	equalizer.Enabled = true
+	local origin = cam.CFrame.Position
+	local destination = origin + Vector3.new(0, 1, 0)
+	local direction = (destination - origin).Unit*9999
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = {plr.Character}
+	local raycast = workspace:Raycast(origin, direction, params)
+	if raycast ~= nil then
+		rainParticles.Enabled = false
+		ts:Create(
+			equalizer,
+			rainconfig.equalizerTween,
+			{
+				HighGain = rainconfig.equalizerHigh,
+				LowGain = rainconfig.equalizerLow,
+				MidGain = rainconfig.equalizerMid
+			}
+		):Play()
+	else 
+		rainParticles.Enabled = true
+		ts:Create(
+			equalizer,
+			rainconfig.equalizerTween,
+			{
+				HighGain = 0,
+				LowGain = 0,
+				MidGain = 0
+			}
+		):Play()
+	end
+	--[[local sky = lighting:FindFirstChildWhichIsA("Sky")
+	local atmosphere = lighting:FindFirstChildWhichIsA("Atmosphere")
+	if not sky then
+		sky = Instance.new("Sky")
+		sky.Parent = lighting
+	end
+	if not atmosphere then
+		atmosphere = Instance.new("Atmosphere")
+		atmosphere.Parent = lighting
+	end]]--
+	for i, instance in pairs(lightingserv:GetChildren()) do
+		if instance:IsA("Sky") then
+			instance.CelestialBodiesShown = false
+			instance.SkyboxBk = rainconfig.sky.bk
+			instance.SkyboxUp = rainconfig.sky.up
+			instance.SkyboxFt = rainconfig.sky.ft
+			instance.SkyboxRt = rainconfig.sky.rt
+			instance.SkyboxLf = rainconfig.sky.lf
+			instance.SkyboxDn = rainconfig.sky.dn
+		elseif instance:IsA("Atmosphere") then
+			instance.Density = rainconfig.atmosphereDensity
+			instance.Glare = 0
+			instance.Haze = 0
+		elseif instance:IsA("SunRaysEffect") then
+			instance.Enabled = false
+		end
+	end
+end
+
+task.spawn(function()
+	while true do
+		task.wait(Random.new():NextNumber(rainconfig.thunderstormRate[1], rainconfig.thunderstormRate[2]))
+		if rainconfig.thunderenabled then
+			createThunderstorm()
+		end
+	end
+end)
+
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
+	if rainconfig.rainenabled then
+		setup()
+		for i = 1, rainconfig.rainRate do
+			createRainDroplet()
+		end
+	end
 	if refillcfg.enabled then
 		task.spawn(function()
 			local char = plr.Character
