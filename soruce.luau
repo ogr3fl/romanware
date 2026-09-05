@@ -5175,6 +5175,10 @@ local config = {
 	killaura_dist = 12,
 	killaura_delay = 0.5,
 	killaura_limb = "Head",
+	
+	-- // antiaim
+	headoffset = false,
+	zeroheadangle = false,
 
 	-- // movement
 	accel = false,
@@ -5782,7 +5786,13 @@ stats1:toggle({name = "instant acceleration",def = config.accel,callback = funct
 	config.accel = value
 end})
 
-local aa1 = movement:section({name = "anti-aim",side = "right",size = 115})
+local aa1 = movement:section({name = "anti-aim",side = "right",size = 165})
+aa1:toggle({name = "head offset",def = config.headoffset,callback = function(value)
+	config.headoffset = value
+end})
+aa1:toggle({name = "head zero angle",def = config.zeroheadangle,callback = function(value)
+	config.zeroheadangle = value
+end})
 aa1:slider({name = "spin",def = 0, max = 180,min = 0,rounding = true,ticking = false,measuring = "",callback = function(value)
 	config.spin = value
 end})
@@ -7055,6 +7065,10 @@ local comma_value = function(amount)
 	return formatted
 end
 
+local headoffsetid = "rbxassetid://68339848"
+local headoffsetanim = Instance.new("Animation")
+headoffsetanim.AnimationId = headoffsetid
+
 _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 	local romanwarewindow = plr.PlayerGui:FindFirstChild("romanware")
 	if romanwarewindow then
@@ -7358,6 +7372,58 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 	if char ~= nil then
 		local humanoid: Humanoid = char:FindFirstChildWhichIsA("Humanoid")
 		if humanoid then
+			if humanoid:GetState() ~= Enum.HumanoidStateType.Dead then
+				if config.zeroheadangle then
+					local torso = char:FindFirstChild("Torso")
+					if torso then
+						local neck = torso:FindFirstChild("Neck")
+						if neck then
+							neck.C0 = CFrame.new(neck.C0.Position) * CFrame.Angles(math.rad(-90),0,math.rad(180))
+						end
+					end
+					local evsFolder = rp:FindFirstChild("Events")
+					if evsFolder then
+						local MOVZREP = evsFolder:FindFirstChild("MOVZREP")
+						if MOVZREP then
+							MOVZREP:FireServer(
+								{
+									{
+										Vector3.zero,
+										Vector3.zero,
+										Vector3.zero,
+										false,
+										[6] = false,
+										[7] = false
+									},
+									false,
+									false,
+									0
+								},
+								nil
+							)
+						end
+					end
+				end
+			end
+			local animator: Animator = humanoid:FindFirstChildWhichIsA("Animator")
+			if animator then
+				local foundanim = false
+				for i, track: AnimationTrack in pairs(animator:GetPlayingAnimationTracks()) do
+					if track.Animation.AnimationId == headoffsetid then
+						foundanim = true
+						if not config.headoffset then
+							track:Stop(0)
+						end
+					end
+				end
+				if foundanim == false and config.headoffset then
+					local newtrack = animator:LoadAnimation(headoffsetanim)
+					newtrack.Looped = true
+					newtrack.Priority = Enum.AnimationPriority.Action4
+					newtrack:Play(0)
+					newtrack:AdjustWeight(1, 0)
+				end
+			end
 			if uis:IsKeyDown(Enum.KeyCode.Space) then
 				if config.airjump == "hold" then
 					if config.jump > 0 then
