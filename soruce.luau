@@ -7074,6 +7074,16 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 		if plrgui then
 			local cg = plrgui:FindFirstChild("CoreGUI")
 			if cg then
+				local stf = cg:FindFirstChild("StoreFrame")
+				if stf then
+					local stf2 = stf:FindFirstChild("StoreFrame2")
+					if stf2 then
+						local cash = stf2:FindFirstChild("Cash")
+						if cash then
+							cash.Text = "$".. comma_value(tostring(cashSpooferCfg.bank))
+						end
+					end
+				end
 				local sf = cg:FindFirstChild("StatsFrame")
 				if sf then
 					local frame2 = sf:FindFirstChild("Frame2")
