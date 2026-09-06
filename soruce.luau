@@ -5193,11 +5193,6 @@ local config = {
 	fly = false,
 	flykey = Enum.KeyCode.Z,
 	flyspeed = 1,
-	flyalign = false,
-	flyragdoll = true,
-	flydowned = true,
-	flynoclip = true,
-	flytype = "velocity",
 
 	-- // visuals
 	bulletTracers = false,
@@ -5241,7 +5236,6 @@ local config = {
 	gunChamsRemoveTextures = true,
 
 	-- // misc
-	infstamina = false,
 	nosmoke = false,
 	nosmokeoverlay = false,
 	noflash = false,
@@ -5803,30 +5797,15 @@ aa1:dropdown({name = "spin type",def = config.spintype,max = 999,options = {conf
 	config.spintype = chosen
 end})
 
-local fly1 = movement:section({name = "fly",side = "right",size = 225})
+local fly1 = movement:section({name = "fly",side = "right",size = 105})
 fly1:toggle({name = "enabled",def = config.fly,callback = function(value)
 	config.fly = value
-end})
-fly1:dropdown({name = "type",def = config.flytype,max = 999,options = {config.flytype, "cframe"},callback = function(chosen)
-	config.flytype = chosen
 end})
 fly1:keybind({name = "key",def = config.flykey,callback = function(key)
 	config.flykey = key
 end})
 fly1:slider({name = "speed",def = config.flyspeed, max = 100,min = 0,rounding = false,ticking = false,measuring = "",callback = function(value)
 	config.flyspeed = value
-end})
-fly1:toggle({name = "align",def = config.flyalign,callback = function(value)
-	config.flyalign = value
-end})
-fly1:toggle({name = "ragdoll",def = config.flyragdoll,callback = function(value)
-	config.flyragdoll = value
-end})
-fly1:toggle({name = "downed",def = config.flydowned,callback = function(value)
-	config.flydowned = value
-end})
-fly1:toggle({name = "noclip",def = config.flynoclip,callback = function(value)
-	config.flynoclip = value
 end})
 
 -- // visuals
@@ -5978,28 +5957,11 @@ visuals1:toggle({name = "fullbright",def = config.lootesp,callback = function(va
 	if value then
 		local lighting = game:GetService("Lighting")
 		_G.fb = rs.PreRender:Connect(function()
-			lighting.Ambient = Color3.new(1,1,1)
-			lighting.OutdoorAmbient = Color3.new(0,0,0)
-			lighting.EnvironmentSpecularScale = 0
-			lighting.EnvironmentDiffuseScale = 0
-			lighting.GlobalShadows = false
-			lighting.Brightness = 1
 			if not config.synctime then
+				lighting.GlobalShadows = false
+				lighting.Ambient = Color3.new(.9,.9,.9)
+				lighting.OutdoorAmbient = Color3.new(0,0,0)
 				lighting.ClockTime = 12
-			end
-			lighting.GeographicLatitude = 23.5
-			lighting.ExposureCompensation = 0
-			lighting.ColorShift_Top = Color3.new(0,0,0)
-			lighting.ColorShift_Bottom = Color3.new(0,0,0)
-			lighting.FogEnd = math.huge
-			lighting.FogColor = Color3.new(0,0,0)
-			lighting.FogStart = math.huge
-			for i, c in pairs(lighting:GetChildren()) do
-				if c:IsA("PostEffect") then
-					c.Enabled = false
-				elseif c:IsA("Atmosphere") then
-					c.Density = 0
-				end
 			end
 		end)
 	else 
@@ -6272,24 +6234,40 @@ misc2:button({name = "gdi",callback = function()
 	teleport(Vector3.new(-4492, 43, -264))
 end})
 local lastrescon = nil
-local lastinfcon = nil
-misc1:toggle({name = "inf stamina [buggy]",def = config.infstamina, textcolor = Color3.new(1,.55,.55), callback = function(value)
-	config.infstamina = value
-	if config.infstamina then
-		initialiseInfiniteStamina()
-		lastinfcon = plr.CharacterAdded:Connect(function(char)
-			task.spawn(function()
-				repeat rs.PreRender:Wait()
-					
-				until char:FindFirstChildWhichIsA("Humanoid")
-				
-				initialiseInfiniteStamina()
-			end)
+local InfStamina = {enabled = false, hook = nil, charconn = nil}
+local function apply_inf_stamina()
+	if not getrenv or not hookfunction or not debug or not debug.getupvalue then return end
+	pcall(function()
+		local cloned   = getrenv()._G.S_Get
+		local original = debug.getupvalue(cloned, 1)
+		InfStamina.Hook = hookfunction(original, function()
+			return 100, 100
+		end)
+	end)
+end
+misc1:toggle({name = "inf stamina",def = config.infstamina, callback = function(state)
+	InfStamina.Enabled = state
+	if state then
+		apply_inf_stamina()
+		if InfStamina.CharConn then InfStamina.CharConn:Disconnect() end
+		InfStamina.CharConn = plr.CharacterAdded:Connect(function()
+			if InfStamina.Enabled then
+				task.wait(1)
+				apply_inf_stamina()
+			end
 		end)
 	else
-		if lastinfcon ~= nil then
-			lastinfcon:Disconnect()
-			lastinfcon = nil
+		if InfStamina.CharConn then
+			InfStamina.CharConn:Disconnect()
+			InfStamina.CharConn = nil
+		end
+		if InfStamina.Hook then
+			pcall(function()
+				local cloned   = getrenv()._G.S_Get
+				local original = debug.getupvalue(cloned, 1)
+				hookfunction(original, InfStamina.Hook)
+			end)
+			InfStamina.Hook = nil
 		end
 	end
 end})
@@ -7893,67 +7871,11 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 			local torso = char:FindFirstChild("Torso")
 			local hum = char:FindFirstChildWhichIsA("Humanoid")
 			if root and hum and torso then
-				if config.flyalign then
-					root.CFrame = CFrame.lookAt(root.Position, cam.CFrame.Position+cam.CFrame.LookVector*9999)
-				end
-				if config.flytype == "velocity" then
-					root.AssemblyLinearVelocity = (cam.CFrame.LookVector*forward) + (cam.CFrame.RightVector*rightward) + (cam.CFrame.UpVector*upward)
-				else 
-					root.AssemblyLinearVelocity = Vector3.zero
-					root.CFrame += (cam.CFrame.LookVector*forward)
-					root.CFrame += (cam.CFrame.RightVector*rightward)
-					root.CFrame += (cam.CFrame.UpVector*upward)
-				end
-				if config.flydowned then
-					local charstats = rp:FindFirstChild("CharStats")
-					if charstats then
-						local ourstats = charstats:FindFirstChild(plr.Name)
-						if ourstats then
-							local downed = ourstats:FindFirstChild("Downed")
-							if downed then
-								downed.Value = true
-							end
-						end
-					end
-				end
-				if config.flyragdoll then
-					local charstats = rp:FindFirstChild("CharStats")
-					if charstats then
-						local ourstats = charstats:FindFirstChild(plr.Name)
-						if ourstats then
-							local rt = ourstats:FindFirstChild("RagdollTime")
-							if rt then
-								rt.Value = math.huge
-								local rs, rs2, rt2, sr = rt:FindFirstChild("RagdollSwitch"), rt:FindFirstChild("RagdollSwitch2"), rt:FindFirstChild("RagdollTime2"), rt:FindFirstChild("SRagdolled")
-								if rs then
-									rs.Value = true
-								end
-								if rs2 then
-									rs2.Value = true
-								end
-								if rt2 then
-									rt2.Value = math.huge
-								end
-								if sr then
-									sr.Value = true
-								end
-							end
-						end
-					end
-					hum.RequiresNeck = false
-					for i, c in pairs(torso:GetChildren()) do
-						if c:IsA("Motor6D") then
-							c.Enabled = false
-						end
-					end
-					hum:ChangeState(Enum.HumanoidStateType.Physics)
-				end
-				if config.flynoclip then
-					for i, c in pairs(char:GetDescendants()) do
-						if c:IsA("BasePart") then
-							c.CanCollide = false
-						end
-					end
+				root.AssemblyLinearVelocity = (cam.CFrame.LookVector*forward) + (cam.CFrame.RightVector*rightward) + (cam.CFrame.UpVector*upward)
+				local events = rp:FindFirstChild("Events")
+				local event  = events and events:FindFirstChild("__RZDONL")
+				if event then
+					event:FireServer("__---r", Vector3.new(0, 0, 0), root.CFrame, false)
 				end
 			end
 		end
@@ -7966,66 +7888,6 @@ _G.romanwarePreRenderCon_1 = rs.PreRender:Connect(function()
 					if v:IsA("BasePart") then
 						v.CanTouch = true
 						v.CanQuery = true
-					end
-				end
-			end
-			if config.flydowned then
-				local charstats = rp:FindFirstChild("CharStats")
-				if charstats then
-					local ourstats = charstats:FindFirstChild(plr.Name)
-					if ourstats then
-						local downed = ourstats:FindFirstChild("Downed")
-						if downed then
-							downed.Value = false
-						end
-					end
-				end
-			end
-			if config.flyragdoll then
-				local charstats = rp:FindFirstChild("CharStats")
-				if charstats then
-					local ourstats = charstats:FindFirstChild(plr.Name)
-					if ourstats then
-						local rt = ourstats:FindFirstChild("RagdollTime")
-						if rt then
-							rt.Value = 0
-							local rs, rs2, rt2, sr = rt:FindFirstChild("RagdollSwitch"), rt:FindFirstChild("RagdollSwitch2"), rt:FindFirstChild("RagdollTime2"), rt:FindFirstChild("SRagdolled")
-							if rs then
-								rs.Value = false
-							end
-							if rs2 then
-								rs2.Value = false
-							end
-							if rt2 then
-								rt2.Value = 0
-							end
-							if sr then
-								sr.Value = false
-							end
-						end
-					end
-				end
-				local char = plr.Character
-				if char ~= nil then
-					local hum = char:FindFirstChildWhichIsA("Humanoid")
-					local torso = char:FindFirstChild("Torso")
-					if hum and torso then
-						for i, c in pairs(torso:GetChildren()) do
-							if c:IsA("Motor6D") then
-								c.Enabled = true
-							end
-						end
-						hum:ChangeState(Enum.HumanoidStateType.Running)
-					end
-				end
-			end
-			if config.flynoclip then
-				local char = plr.Character
-				if char ~= nil then
-					for i, c in pairs(char:GetDescendants()) do
-						if c:IsA("BasePart") and (not c:FindFirstAncestorWhichIsA("Tool")) and (not string.find(c.Name:lower(), "arm")) and (not string.find(c.Name:lower(), "leg")) and (not string.find(c.Name:lower(), "head")) and (not string.find(c.Name:lower(), "collider")) then
-							c.CanCollide = true
-						end
 					end
 				end
 			end
